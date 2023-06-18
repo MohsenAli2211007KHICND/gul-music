@@ -7,27 +7,53 @@
         <input type="file" @change="handleChange">
         <div class="error">{{ fileError }}</div>
         <div class="error"></div>
-        <button>Submit</button>
+        <button v-if="!isPandding">Create</button>
+        <button v-else disabled>Saving...</button>
     </form>
 </template>
 
 <script>
 import { ref } from 'vue'
 import useStorage from '@/composables/useStorage'
+import useCollection from '@/composables/useCollection'
+import getUser from '@/composables/getUser'
+import { timeStamp } from '@/firebase/config'
 export default {
     setup () {
         const { path, url, uploadImage} = useStorage()
+        const { error, addDoc } = useCollection("playlists")
+        const { user } = getUser()
+
         const title = ref('')
         const description = ref('')
         const file = ref(null)
         const fileError = ref('')
+        const isPandding = ref(false)
         
         const types = ['image/png', 'image/jpeg', 'image/jpg']
 
         const handleSubmit = async () => {
             if (file.value){
-               await uploadImage(file.value)
-               console.log("file uploaded successfully and url:", url);
+                isPandding.value = true
+                await uploadImage(file.value)
+                await addDoc({
+                    title: title.value,
+                    description: description.value,
+                    userId: user.value.uid,
+                    userName: user.value.displayName,
+                    coverUrl: url.value,
+                    filePath: path.value,
+                    songs: [],
+                    createdAt: timeStamp()
+                })
+                isPandding.value = false
+                if(!error.value) {
+                    console.log("Playlist Created");
+                    title.value = ''
+                    description.value = ''
+                    file.value = null
+                }
+
             }
         }
 
@@ -45,7 +71,7 @@ export default {
             }
         }
 
-        return { title, description, handleSubmit, handleChange, fileError }
+        return { title, description, handleSubmit, handleChange, fileError, isPandding }
     }
 }
 </script>
