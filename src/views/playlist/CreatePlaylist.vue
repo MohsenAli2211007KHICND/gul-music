@@ -18,6 +18,7 @@ import useStorage from '@/composables/useStorage'
 import useCollection from '@/composables/useCollection'
 import getUser from '@/composables/getUser'
 import { timeStamp } from '@/firebase/config'
+import { RouterLink, useRouter } from 'vue-router'
 export default {
     setup () {
         const { path, url, uploadImage} = useStorage()
@@ -29,6 +30,7 @@ export default {
         const file = ref(null)
         const fileError = ref('')
         const isPandding = ref(false)
+        const router = useRouter()
         
         const types = ['image/png', 'image/jpeg', 'image/jpg']
 
@@ -36,7 +38,7 @@ export default {
             if (file.value){
                 isPandding.value = true
                 await uploadImage(file.value)
-                await addDoc({
+                const res = await addDoc({
                     title: title.value,
                     description: description.value,
                     userId: user.value.uid,
@@ -48,7 +50,7 @@ export default {
                 })
                 isPandding.value = false
                 if(!error.value) {
-                    console.log("Playlist Created");
+                    router.push({name: 'PlaylistDetails', params: {id: res.id}})
                     title.value = ''
                     description.value = ''
                     file.value = null
